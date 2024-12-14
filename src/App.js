@@ -82,7 +82,7 @@ export const uriArr = [];
 
 function App() {
   const [url, setUrl] = useState("");
-
+  //Définir l'url avec le token toutes les 30 minutes
   useEffect(() => {
     const majUrl = () => {
       setUrl(window.location.href);
