@@ -1,9 +1,11 @@
+import styles from "./SearchResults.module.css";
+
 function SearchResults(props) {
   return (
-    <>
+    <div className={props.className}>
       <p>SearchResults</p>
-      <div style={{ width: 150, height: 300, border: "1px solid black" }}></div>
-    </>
+      <div className={styles.results}>{props.showResults}</div>
+    </div>
   );
 }
 
