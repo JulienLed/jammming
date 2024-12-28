@@ -15,7 +15,7 @@ function SearchBar(props) {
       <button
         className={styles.button}
         onClick={() => {
-          props.handleShowResults(tracksArr, props.search);
+          props.handleShowResults(props.search);
         }}
       >
         Search

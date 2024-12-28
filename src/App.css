@@ -21,9 +21,12 @@
 
 .gridSong p {
     grid-column: 1;
-    line-height: 0;
     font-size: 18px;
     padding-left: 3px;
+    line-height: 1;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
 }
 
 .gridSong button {
