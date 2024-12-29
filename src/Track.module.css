@@ -9,9 +9,12 @@
 
 .gridSong p {
     grid-column: 1;
-    line-height: 0;
+    line-height: 1;
     font-size: 18px;
     padding-left: 3px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-wrap: nowrap;
 }
 
 .gridSong button {

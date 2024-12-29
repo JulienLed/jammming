@@ -3,6 +3,8 @@ import SearchBar from "./SearchBar";
 import SearchResults from "./SearchResults";
 import Playlist from "./Playlist";
 import "./App.css";
+import getURL from "./getURL";
+import getRefreshToken from "./GetReferesh";
 
 export const uriArr = [];
 
@@ -10,23 +12,6 @@ function App() {
   //Là ou est stocké l'input de SearchBar
   const [search, setSearch] = useState("");
   const handleSearch = (input) => setSearch(input);
-
-  //Là ou est stocké la trackList
-  const [trackList, setTrackList] = useState([]);
-
-  const handleTrackList = (track, e) => {
-    if (e.target.innerText === "+") {
-      setTrackList((prev) => {
-        if (!prev.some((el) => el.id === track.id)) {
-          return [...prev, track];
-        } else {
-          return [...prev];
-        }
-      });
-    } else if (e.target.innerText === "-") {
-      setTrackList((prev) => prev.filter((el) => el.id !== track.id));
-    }
-  };
 
   //Là ou sont stockés les résultats de la recherche
   const [showResults, setShowresults] = useState("");
@@ -46,7 +31,6 @@ function App() {
   }, []);
 
   //Trouver, mettre en tableau et afficher le résultat de la recherche Spotify
-  const [tracksArr, setTracksArr] = useState([]);
   const handleShowResults = (input) => {
     if (input) {
       fetch(`https://api.spotify.com/v1/search?q=${input}&type=track`, {
@@ -57,19 +41,6 @@ function App() {
       })
         .then((res) => res.json())
         .then((data) => {
-          setTracksArr(() => {
-            return [
-              data.tracks.items.map((obj) => {
-                return {
-                  id: obj.id,
-                  name: obj.name,
-                  artist: obj.artists[0].name,
-                  album: obj.album.name,
-                  uri: obj.uri,
-                };
-              }),
-            ];
-          });
           setShowresults(
             data.tracks.items.map((obj) => {
               return (
@@ -83,7 +54,7 @@ function App() {
                   </p>
                   <p>{obj.artists[0].name}</p>
                   <p>{obj.album.name}</p>
-                  <button onClick={(e) => handleTrackList(obj, e)}>+</button>
+                  <button onClick={(e) => handleTrackList(e, obj)}>+</button>
                 </div>
               );
             })
@@ -93,11 +64,48 @@ function App() {
       setShowresults(<div>No results</div>);
     }
   };
+  //Là ou est stocké la trackList
+  const [trackList, setTrackList] = useState([]);
+
+  //fonction dans SearchResults et Track l'ajout ou retirer la track
+  const handleTrackList = (e, track) => {
+    //définition de la trackList
+    if (e.target.innerText === "+") {
+      setTrackList((prev) => {
+        if (!prev.find((t) => t.id === track.id)) {
+          return [...prev, track];
+        }
+        return prev;
+      });
+    } else if (e.target.innerText === "-") {
+      setTrackList((prev) => {
+        return prev
+          ? prev.filter((remTrack) => remTrack.id !== track.id)
+          : null;
+      });
+    }
+  };
 
   //là ou est stocké le nom de la Playlist
   const [playlistName, setPlaylistName] = useState("");
   const handlePlaylistName = (input) => setPlaylistName(input);
 
+  //Le post de la playlist
+  const [userId, setUserId] = useState("");
+  const handlePlaylistPost = () => {
+    getRefreshToken();
+    fetch("https://api.spotify.com/v1/me", {
+      method: "GET",
+      headers: {
+        Authorization: "Bearer " + token,
+      },
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        setUserId(data.id);
+      });
+  };
+  ///////////////Problèmle car erreur 401. Le token semble ne plus être valide, même si j'arrive à chercher sur spotify, et que j'ai authoriser tout. Il faut régler ce problème pour obtnir l'ID de l'utilisateur
   return (
     <div className="grid">
       <SearchBar
@@ -117,6 +125,7 @@ function App() {
         handlePlaylistName={handlePlaylistName}
         trackList={trackList}
         handleTrackList={handleTrackList}
+        handlePlaylistPost={handlePlaylistPost}
       />
     </div>
   );

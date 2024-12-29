@@ -16,8 +16,7 @@ function Playlist(props) {
         trackList={props.trackList}
         handleTrackList={props.handleTrackList}
       />
-      <button>Add to Spotify</button>
-      <button onClick={() => alert("lol")}>Connect to Spotify</button>
+      <button onClick={props.handlePlaylistPost}>Add to Spotify</button>
     </div>
   );
 }

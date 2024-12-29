@@ -3,16 +3,14 @@ import styles from "./Track.module.css";
 function Track(props) {
   return (
     <div>
-      {props.trackList.map((track) => {
-        return (
-          <div key={track.id} className="gridSong">
-            <p style={{ fontWeight: "bold" }}>{track.name}</p>
-            <p>{track.artist}</p>
-            <p>{track.album}</p>
-            <button onClick={(e) => props.handleTrackList(track, e)}>-</button>
-          </div>
-        );
-      })}
+      {props.trackList.map((track) => (
+        <div key={track.id} className={styles.gridSong}>
+          <p style={{ fontWeight: "bold" }}>{track.name}</p>
+          <p>{track.artists[0].name}</p>
+          <p>{track.album.name}</p>
+          <button onClick={(e) => props.handleTrackList(e, track)}>-</button>
+        </div>
+      ))}
     </div>
   );
 }
