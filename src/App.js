@@ -3,8 +3,6 @@ import SearchBar from "./SearchBar";
 import SearchResults from "./SearchResults";
 import Playlist from "./Playlist";
 import "./App.css";
-import getURL from "./getURL";
-import getRefreshToken from "./GetReferesh";
 
 export const uriArr = [];
 
@@ -18,17 +16,48 @@ function App() {
 
   //Obtenir le token
   const [token, setToken] = useState("");
+  const [refreshToken, setRefreshToken] = useState();
+  const [timeExpire, setTimeExpire] = useState();
+  const [code, setCode] = useState();
+  const client_id = "d883f247765048d18fd6a4451f472c78";
+  const client_secret = "42fec827555a48a0be9bc8cf1c328e4e";
+  const redirect_uri = "http://localhost:3000";
+  const scope =
+    "user-read-private+user-read-email+playlist-modify-private+playlist-modify-public";
+  const urlForToken = "https://accounts.spotify.com/api/token";
+  const urlToAccessSpotify = "https://accounts.spotify.com/authorize?";
+
+  const handleAccessSpotify = () => {
+    //obtenir le code
+    window.location.href = `${urlToAccessSpotify}response_type=code&client_id=${client_id}&scope=${scope}&redirect_uri=${redirect_uri}`;
+  };
+
   useEffect(() => {
-    fetch("https://accounts.spotify.com/api/token", {
+    //obtenir le refesh token
+    setCode(() => {
+      const params = new URLSearchParams(window.location.search);
+      const code = params.get("code");
+      return code;
+    });
+    fetch(urlForToken, {
       method: "POST",
       headers: {
+        Authorization: "Basic " + btoa(client_id + ":" + client_secret),
         "Content-Type": "application/x-www-form-urlencoded",
       },
-      body: "grant_type=client_credentials&client_id=d883f247765048d18fd6a4451f472c78&client_secret=42fec827555a48a0be9bc8cf1c328e4e",
+      body: new URLSearchParams({
+        grant_type: "authorization_code",
+        code: code,
+        redirect_uri: redirect_uri,
+      }).toString(),
     })
-      .then((res) => res.json())
-      .then((data) => setToken(data.access_token));
-  }, []);
+      .then((response) => response.json())
+      .then((jsonResponse) => {
+        setToken(jsonResponse.access_token);
+        setTimeExpire(jsonResponse.expires_in);
+        setRefreshToken(jsonResponse.refresh_token);
+      });
+  }, [code]);
 
   //Trouver, mettre en tableau et afficher le résultat de la recherche Spotify
   const handleShowResults = (input) => {
@@ -68,6 +97,7 @@ function App() {
   const [trackList, setTrackList] = useState([]);
 
   //fonction dans SearchResults et Track l'ajout ou retirer la track
+  const [trackArrUris, setTrackArrUris] = useState([]);
   const handleTrackList = (e, track) => {
     //définition de la trackList
     if (e.target.innerText === "+") {
@@ -86,26 +116,64 @@ function App() {
     }
   };
 
+  useEffect(() => {
+    setTrackArrUris(trackList.map((track) => track.uri));
+  }, [trackList]);
+
   //là ou est stocké le nom de la Playlist
   const [playlistName, setPlaylistName] = useState("");
   const handlePlaylistName = (input) => setPlaylistName(input);
 
   //Le post de la playlist
   const [userId, setUserId] = useState("");
+  const [playlistID, setPlaylistID] = useState();
   const handlePlaylistPost = () => {
-    getRefreshToken();
-    fetch("https://api.spotify.com/v1/me", {
+    //obtenir userId
+    const urlToGetID = "https://api.spotify.com/v1/me";
+    fetch(urlToGetID, {
       method: "GET",
       headers: {
-        Authorization: "Bearer " + token,
+        Authorization: `Bearer ${token}`,
       },
     })
-      .then((res) => res.json())
-      .then((data) => {
-        setUserId(data.id);
+      .then((response) => response.json())
+      .then((jsonResponse) => {
+        const user = jsonResponse.id;
+        setUserId(jsonResponse.id);
+        //créer la playlist
+        const urlToCreatePlaylist = `https://api.spotify.com/v1/users/${user}/playlists`;
+        fetch(urlToCreatePlaylist, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            name: playlistName,
+            description: "test API Spotify",
+          }),
+        })
+          .then((response) => response.json())
+          .then((jsonResponse) => {
+            const playlistIdDirect = jsonResponse.id;
+            setPlaylistID(jsonResponse.id);
+            //ajouter des tracks
+            const urlToAddTrack = `https://api.spotify.com/v1/users/${user}/playlists/${playlistIdDirect}/tracks`;
+            console.log(trackArrUris);
+            fetch(urlToAddTrack, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+              },
+              body: JSON.stringify({
+                uris: trackArrUris,
+              }),
+            });
+          });
       });
   };
-  ///////////////Problèmle car erreur 401. Le token semble ne plus être valide, même si j'arrive à chercher sur spotify, et que j'ai authoriser tout. Il faut régler ce problème pour obtnir l'ID de l'utilisateur
+
   return (
     <div className="grid">
       <SearchBar
@@ -126,6 +194,7 @@ function App() {
         trackList={trackList}
         handleTrackList={handleTrackList}
         handlePlaylistPost={handlePlaylistPost}
+        handleAccessSpotify={handleAccessSpotify}
       />
     </div>
   );
